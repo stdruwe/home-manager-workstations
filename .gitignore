@@ -1,0 +1,6 @@
+# Nix build result symlinks
+/result
+/result-*
+
+# Machine-local flake lock; flake.lock.bootstrap is the tracked initial state.
+/flake.lock

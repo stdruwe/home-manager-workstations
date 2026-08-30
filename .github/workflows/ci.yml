@@ -1,0 +1,70 @@
+name: Home Manager CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  static-checks:
+    name: Static checks
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Validate GitHub Actions workflow
+        run: nix shell nixpkgs#actionlint --command actionlint
+
+      - name: Validate Node-RED file MCP syntax
+        run: python3 -m py_compile packages/node-red-file-mcp.py
+
+      - name: Test Node-RED file MCP safety invariants
+        run: python3 -m unittest discover -s tests -p 'test_*.py' -v
+
+  evaluate:
+    name: Evaluate ${{ matrix.profile }}
+    runs-on: ubuntu-24.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        profile:
+          - thinkpad-x1-carbon-gen13
+          - hp-z2-tower-g9
+          - apple-macbook-air-8-1
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+
+      - name: Seed CI flake lock
+        run: cp flake.lock.bootstrap flake.lock
+
+      - name: Evaluate Home Manager activation package
+        run: |
+          profile='${{ matrix.profile }}'
+          ci_home="$RUNNER_TEMP/ci-home"
+          mkdir -p "$ci_home"
+          export USER=ciuser
+          export HOME="$ci_home"
+
+          nix eval \
+            --impure \
+            --raw \
+            --no-write-lock-file \
+            "path:$PWD#homeConfigurations.\"$profile\".activationPackage.drvPath" \
+            >/dev/null
