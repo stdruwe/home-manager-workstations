@@ -131,6 +131,8 @@ This verifies both the clean-checkout bootstrap path and independence from a rea
 
 A separate static-check job compiles `packages/node-red-file-mcp.py` and runs the Node-RED file-MCP safety tests. CI also validates the GitHub Actions workflow with actionlint.
 
+`.github/workflows/update-release-lock.yml` owns release/bootstrap lock maintenance. It can be run manually before a release and also checks weekly. It seeds a temporary live lock from `flake.lock.bootstrap`, updates all flake inputs, evaluates all three supported activation packages and promotes the candidate back to the tracked bootstrap lock only after successful validation. A changed bootstrap lock is then committed by the GitHub Actions bot. Installed machines never push their independent live `flake.lock` state upstream.
+
 ## Default browser
 
 Zen Browser is the intended default browser on all managed systems. Home Manager owns targeted MIME/default-browser associations rather than globally taking over the entire user `mimeapps.list`.
@@ -233,7 +235,7 @@ The live `flake.lock` belongs to the installed machine. When machine-local manag
 
 The NixOS-side optional `deployment.json` setting `topgrade.updateManagedDependencies` defaults to `true`. Setting it to `false` freezes machine-local managed dependency advancement while preserving repository synchronization and normal activation.
 
-There is no publisher role, shared update transaction, automatic dependency commit, or automatic dependency push. Different installed machines may intentionally use different input revisions while sharing the same Home Manager configuration source.
+There is no publisher role or shared Topgrade update transaction. Different installed machines may intentionally use different input revisions while sharing the same Home Manager configuration source. The separate repository maintenance workflow is the only automated path that advances the tracked release/bootstrap lock.
 
 The later normal Home Manager step in Topgrade activates only the profile of the current machine.
 
@@ -262,6 +264,8 @@ The implementation and recovery procedure are documented in the paired NixOS rep
 ## Public release model
 
 The public repository pair starts at `v0.1.0`. Both repositories carry the same release tag.
+
+`flake.lock.bootstrap` is the release/install input baseline. Before tagging a release, the `Refresh Home Manager release lock` workflow should have completed successfully so the tracked bootstrap lock represents a freshly validated upstream state. Installed systems may immediately diverge from that baseline again through their machine-local Topgrade-managed live lock.
 
 Public history starts from one clean initial public baseline rather than importing private development history. Installed systems use the public HTTPS repositories as their regular upstreams.
 
