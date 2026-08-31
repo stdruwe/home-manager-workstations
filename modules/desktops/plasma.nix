@@ -152,6 +152,11 @@ PYTHON
   '';
 in
 {
+  # Plasma owns the GTK 2 compatibility file and rewrites ~/.gtkrc-2.0
+  # during the desktop session. Keep Home Manager responsible for GTK 3/4
+  # while avoiding competing ownership of the Plasma-managed GTK 2 file.
+  gtk.gtk2.enable = false;
+
   home.activation.configurePlasmaDefaults = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     mkdir -p "$HOME/.config"
 
