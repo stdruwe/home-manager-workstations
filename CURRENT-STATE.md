@@ -106,6 +106,18 @@ COSMIC exposes no separate native serif setting. Generic serif requests therefor
 - no Hermes integration
 - one-time dual-monitor Plasma panel bootstrap
 - recurring tray bootstrap disabled after successful initialization
+- the panel bootstrap intentionally waits 35 seconds after login
+- paired NixOS deliberately applies the final KScreen display layout after 30 seconds
+
+The HP timing is a cross-repository startup invariant, not an arbitrary delay.
+The NixOS side waits 30 seconds before applying the deployment-specific final
+two-monitor layout so Plasma can complete its initial output/panel discovery
+without repeatedly creating or migrating application bars as the topology
+changes. This Home Manager profile waits another five seconds and only then
+creates the missing second panel once. Do not change the 35-second bootstrap or
+NixOS `plasmaDisplayLayout.delaySeconds` independently; review and test both
+repositories together. The NixOS canonical rationale is also documented under
+`docs/deployment-json.md` in the paired repository.
 
 ### `apple-macbook-air-8-1`
 
@@ -314,6 +326,7 @@ Normal day-to-day updates are expected to flow through Topgrade.
 - Use Home Manager's local user/home data instead of fixed `/home/<name>` paths.
 - Keep secrets, deployment-specific endpoints and personal Git identity outside the repository.
 - Use `/etc/nixos/local/deployment.json` as the canonical deployment-data path.
+- Preserve the HP 30 s NixOS display-layout / 35 s Home Manager panel-bootstrap ordering unless both repositories are reviewed and tested together.
 - Use `--impure` whenever evaluating these hardware profiles.
 - Use explicit `path:.#<profile>` references for manual builds/switches against an installed checkout with the ignored live lock.
 - Keep `flake.lock.bootstrap` tracked as the clean-checkout/install baseline; keep the live `flake.lock` ignored and machine-local.

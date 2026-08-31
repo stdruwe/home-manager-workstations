@@ -104,8 +104,13 @@ let
 
     [ -e "$marker" ] && exit 0
 
-    # The NixOS monitor layout is applied 30 seconds after login. Run the panel
-    # bootstrap only on the first still-uninitialized login after that point.
+    # The paired NixOS HP profile intentionally waits 30 seconds after login
+    # before applying the final two-monitor KScreen layout. That settling
+    # period prevents Plasma from creating/migrating multiple application bars
+    # while the output topology is still changing. Wait five seconds longer so
+    # this one-time second-panel bootstrap runs only after that layout has
+    # settled. The 30 s / 35 s ordering is deliberate; do not change either
+    # delay independently without reviewing both repositories together.
     ${pkgs.coreutils}/bin/sleep 35
 
     script="$(${pkgs.coreutils}/bin/cat ${panelScript})"
