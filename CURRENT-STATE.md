@@ -290,6 +290,8 @@ The implementation and recovery procedure are documented in the paired NixOS rep
 
 The public repository pair starts at `v0.1.0`. Both repositories carry the same release tag.
 
+Home Manager is published first. The matching NixOS release is published only after this Home Manager tag exists, because the NixOS release workflow immediately checks out the same Home Manager tag while constructing the combined installation package. The canonical paired-release checklist is `docs/release-process.md` in the NixOS repository. Published release tags are immutable; corrections use a new version.
+
 `flake.lock.bootstrap` is the release/install input baseline. Before tagging a release, the `Refresh Home Manager release lock` workflow should have completed successfully so the tracked bootstrap lock represents a freshly validated upstream state. Installed systems may immediately diverge from that baseline again through their machine-local Topgrade-managed live lock.
 
 Public history starts from one clean initial public baseline rather than importing private development history. Installed systems use the public HTTPS repositories as their regular upstreams.
@@ -327,6 +329,7 @@ Normal day-to-day updates are expected to flow through Topgrade.
 - Keep secrets, deployment-specific endpoints and personal Git identity outside the repository.
 - Use `/etc/nixos/local/deployment.json` as the canonical deployment-data path.
 - Preserve the HP 30 s NixOS display-layout / 35 s Home Manager panel-bootstrap ordering unless both repositories are reviewed and tested together.
+- Preserve the Home-Manager-first / NixOS-second release publication order.
 - Use `--impure` whenever evaluating these hardware profiles.
 - Use explicit `path:.#<profile>` references for manual builds/switches against an installed checkout with the ignored live lock.
 - Keep `flake.lock.bootstrap` tracked as the clean-checkout/install baseline; keep the live `flake.lock` ignored and machine-local.
