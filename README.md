@@ -98,9 +98,9 @@ Shared SSH configuration routes GitHub through `ssh.github.com:443` for authenti
 A normal installed checkout already has its ignored machine-local `flake.lock`:
 
 ```bash
-home-manager build --impure --flake '.#thinkpad-x1-carbon-gen13'
-home-manager build --impure --flake '.#hp-z2-tower-g9'
-home-manager build --impure --flake '.#apple-macbook-air-8-1'
+home-manager build --impure --flake 'path:.#thinkpad-x1-carbon-gen13'
+home-manager build --impure --flake 'path:.#hp-z2-tower-g9'
+home-manager build --impure --flake 'path:.#apple-macbook-air-8-1'
 ```
 
 For a newly cloned clean checkout, seed the live lock once from the tracked baseline before building:
@@ -112,9 +112,9 @@ cp flake.lock.bootstrap flake.lock
 ## Activate
 
 ```bash
-home-manager switch --impure --flake '.#thinkpad-x1-carbon-gen13'
-home-manager switch --impure --flake '.#hp-z2-tower-g9'
-home-manager switch --impure --flake '.#apple-macbook-air-8-1'
+home-manager switch --impure --flake 'path:.#thinkpad-x1-carbon-gen13'
+home-manager switch --impure --flake 'path:.#hp-z2-tower-g9'
+home-manager switch --impure --flake 'path:.#apple-macbook-air-8-1'
 ```
 
 ## Fresh-install integration

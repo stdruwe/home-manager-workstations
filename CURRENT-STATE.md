@@ -36,9 +36,9 @@ There is no generic username compatibility alias and no root `home.nix` compatib
 Build examples for an installed checkout with a live local lock:
 
 ```bash
-home-manager build --impure --flake '.#thinkpad-x1-carbon-gen13'
-home-manager build --impure --flake '.#hp-z2-tower-g9'
-home-manager build --impure --flake '.#apple-macbook-air-8-1'
+home-manager build --impure --flake 'path:.#thinkpad-x1-carbon-gen13'
+home-manager build --impure --flake 'path:.#hp-z2-tower-g9'
+home-manager build --impure --flake 'path:.#apple-macbook-air-8-1'
 ```
 
 A newly cloned clean checkout seeds `flake.lock` from `flake.lock.bootstrap` before building. Package/input versions are then pinned per machine by the ignored live `flake.lock`; `--impure` is used only to supply local user identity and optional deployment data from the NixOS checkout.
@@ -265,19 +265,19 @@ Public history starts from one clean initial commit rather than importing develo
 ThinkPad:
 
 ```bash
-home-manager switch --impure --flake '.#thinkpad-x1-carbon-gen13'
+home-manager switch --impure --flake 'path:.#thinkpad-x1-carbon-gen13'
 ```
 
 HP Z2:
 
 ```bash
-home-manager switch --impure --flake '.#hp-z2-tower-g9'
+home-manager switch --impure --flake 'path:.#hp-z2-tower-g9'
 ```
 
 MacBook:
 
 ```bash
-home-manager switch --impure --flake '.#apple-macbook-air-8-1'
+home-manager switch --impure --flake 'path:.#apple-macbook-air-8-1'
 ```
 
 Normal day-to-day updates are expected to flow through Topgrade.
