@@ -11,7 +11,13 @@ let
   hermesEnv = "${homeDirectory}/.config/hermes/hermes.env";
   hermesBin = "${homeDirectory}/.nix-profile/bin/hermes";
 
-  deploymentFile = "/etc/nixos/deployment.json";
+  localDeploymentFile = "/etc/nixos/local/deployment.json";
+  bootstrapDeploymentFile = "/etc/nixos/deployment.json";
+  deploymentFile =
+    if builtins.pathExists localDeploymentFile then
+      localDeploymentFile
+    else
+      bootstrapDeploymentFile;
   deployment =
     if builtins.pathExists deploymentFile then
       builtins.fromJSON (builtins.readFile deploymentFile)
@@ -22,7 +28,7 @@ let
       if builtins.isAttrs deployment.hermes then
         deployment.hermes
       else
-        throw "deployment.json hermes must be an attribute set"
+        throw "local/deployment.json hermes must be an attribute set"
     else
       { };
   habUrl =
@@ -30,7 +36,7 @@ let
       if builtins.isString hermesDeployment.habUrl then
         hermesDeployment.habUrl
       else
-        throw "deployment.json hermes.habUrl must be a string"
+        throw "local/deployment.json hermes.habUrl must be a string"
     else
       "";
   ollamaBaseUrl =
@@ -38,7 +44,7 @@ let
       if builtins.isString hermesDeployment.ollamaBaseUrl then
         hermesDeployment.ollamaBaseUrl
       else
-        throw "deployment.json hermes.ollamaBaseUrl must be a string"
+        throw "local/deployment.json hermes.ollamaBaseUrl must be a string"
     else
       "";
 
@@ -95,7 +101,7 @@ ${lib.optionalString (habUrl != "") ''
     export HAB_SKIP_UPDATE_CHECK="''${HAB_SKIP_UPDATE_CHECK:-1}"
 
     if [ -z "''${HAB_URL:-}" ]; then
-      echo "HAB_URL is not configured; set hermes.habUrl in /etc/nixos/deployment.json or HAB_URL in $hermes_env" >&2
+      echo "HAB_URL is not configured; set hermes.habUrl in /etc/nixos/local/deployment.json or HAB_URL in $hermes_env" >&2
       exit 1
     fi
 

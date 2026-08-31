@@ -54,6 +54,19 @@ jobs:
       - name: Seed CI flake lock
         run: cp flake.lock.bootstrap flake.lock
 
+      - name: Prepare canonical NixOS deployment fixture
+        if: matrix.profile == 'thinkpad-x1-carbon-gen13'
+        run: |
+          sudo install -d -m 0755 /etc/nixos/local
+          sudo tee /etc/nixos/local/deployment.json >/dev/null <<'EOF'
+          {
+            "hermes": {
+              "habUrl": "http://homeassistant.example:8123",
+              "ollamaBaseUrl": "http://ollama.example:11434/v1"
+            }
+          }
+          EOF
+
       - name: Evaluate Home Manager activation package
         run: |
           profile='${{ matrix.profile }}'
@@ -68,3 +81,20 @@ jobs:
             --no-write-lock-file \
             "path:$PWD#homeConfigurations.\"$profile\".activationPackage.drvPath" \
             >/dev/null
+
+      - name: Verify canonical Hermes deployment integration
+        if: matrix.profile == 'thinkpad-x1-carbon-gen13'
+        run: |
+          ci_home="$RUNNER_TEMP/ci-home"
+          export USER=ciuser
+          export HOME="$ci_home"
+
+          hab_url="$(
+            nix eval \
+              --impure \
+              --raw \
+              --no-write-lock-file \
+              'path:'"$PWD"'#homeConfigurations."thinkpad-x1-carbon-gen13".config.services.hermes-agent.environment.HAB_URL'
+          )"
+
+          test "$hab_url" = "http://homeassistant.example:8123"

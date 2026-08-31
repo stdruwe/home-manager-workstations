@@ -19,9 +19,21 @@ This file is the durable operational baseline for the Home Manager repository. R
 
 The repository path itself is not part of the configuration contract. Modules use Home Manager's current user/home data rather than fixed `/home/<name>` paths.
 
-System-level NixOS configuration lives in the paired public NixOS repository and is installed at `/etc/nixos`.
+System-level NixOS configuration lives in the paired public NixOS repository and is installed at `/etc/nixos`. Its canonical machine-local recovery state is `/etc/nixos/local/`; Home Manager does not duplicate it.
 
 Documentation uses technical profile names, hardware descriptions and generic placeholders rather than deployment-specific hostnames or personal usernames.
+
+## NixOS local-state contract
+
+When Home Manager needs non-secret deployment-specific system data, the canonical source is:
+
+```text
+/etc/nixos/local/deployment.json
+```
+
+`modules/hermes.nix` prefers that file. The historical `/etc/nixos/deployment.json` path remains only as migration/bootstrap fallback compatibility for already installed systems while they move to the new NixOS local-state layout.
+
+A missing deployment file remains a valid evaluation state. For a normal installed NixOS system after activation, `local/deployment.json` exists and contains at least `{}`.
 
 ## Managed hardware profiles
 
@@ -127,7 +139,7 @@ Personal Git commit identity is not stored in the repository. The managed Git co
 
 The evaluation matrix covers all three profiles. CI copies tracked `flake.lock.bootstrap` to the ignored live `flake.lock` before evaluation, supplies an arbitrary writable test `USER`/`HOME`, and evaluates with `--impure --no-write-lock-file`.
 
-This verifies both the clean-checkout bootstrap path and independence from a real workstation username or hostname. Optional `/etc/nixos/deployment.json` data is not required for CI evaluation.
+The ThinkPad job additionally creates a documentation-only `/etc/nixos/local/deployment.json` with Hermes HAB/Ollama endpoints and verifies that the resulting Home Manager configuration exposes the expected `HAB_URL`. This is a positive cross-repository integration check for the canonical NixOS deployment path. Other profiles continue to prove that no deployment-specific file is required.
 
 A separate static-check job compiles `packages/node-red-file-mcp.py` and runs the Node-RED file-MCP safety tests. CI also validates the GitHub Actions workflow with actionlint.
 
@@ -190,7 +202,8 @@ Hermes rules:
 - preserve existing configuration unless a requested change targets it
 - never commit API keys, tokens, passwords, private hostnames or deployment-specific service endpoints
 - secret environment file: current user's `~/.config/hermes/hermes.env`
-- deployment-specific non-secret HAB/Ollama endpoints: optional `/etc/nixos/deployment.json` keys `hermes.habUrl` and `hermes.ollamaBaseUrl`
+- deployment-specific non-secret HAB/Ollama endpoints: normally `/etc/nixos/local/deployment.json` keys `hermes.habUrl` and `hermes.ollamaBaseUrl`
+- root-level `/etc/nixos/deployment.json` is migration/bootstrap fallback only
 - helper paths derive from `home.homeDirectory`
 - when no local Hermes deployment endpoints are present, the Home Manager profile still evaluates and local HAB/Ollama integration is simply omitted
 
@@ -233,7 +246,7 @@ The live `flake.lock` belongs to the installed machine. When machine-local manag
 4. replaces the ignored live `flake.lock` only after successful validation;
 5. leaves the previous local lock intact if update or validation fails.
 
-The NixOS-side optional `deployment.json` setting `topgrade.updateManagedDependencies` defaults to `true`. Setting it to `false` freezes machine-local managed dependency advancement while preserving repository synchronization and normal activation.
+The NixOS-side `/etc/nixos/local/deployment.json` setting `topgrade.updateManagedDependencies` defaults to `true`. Setting it to `false` freezes machine-local managed dependency advancement while preserving repository synchronization and normal activation.
 
 There is no publisher role or shared Topgrade update transaction. Different installed machines may intentionally use different input revisions while sharing the same Home Manager configuration source. The separate repository maintenance workflow is the only automated path that advances the tracked release/bootstrap lock.
 
@@ -300,6 +313,7 @@ Normal day-to-day updates are expected to flow through Topgrade.
 - Keep hardware-specific behavior under `hosts/`.
 - Use Home Manager's local user/home data instead of fixed `/home/<name>` paths.
 - Keep secrets, deployment-specific endpoints and personal Git identity outside the repository.
+- Use `/etc/nixos/local/deployment.json` as the canonical deployment-data path.
 - Use `--impure` whenever evaluating these hardware profiles.
 - Use explicit `path:.#<profile>` references for manual builds/switches against an installed checkout with the ignored live lock.
 - Keep `flake.lock.bootstrap` tracked as the clean-checkout/install baseline; keep the live `flake.lock` ignored and machine-local.
