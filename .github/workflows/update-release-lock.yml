@@ -1,0 +1,71 @@
+name: Refresh Home Manager release lock
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "29 4 * * 1"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-home-manager-release-lock
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: Refresh and validate flake.lock.bootstrap
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+
+      - name: Refresh bootstrap flake inputs
+        shell: bash
+        run: |
+          cp flake.lock.bootstrap flake.lock
+          nix flake update --flake "path:$PWD"
+
+      - name: Validate all Home Manager profiles
+        shell: bash
+        run: |
+          ci_home="$RUNNER_TEMP/ci-home"
+          mkdir -p "$ci_home"
+          export USER=ciuser
+          export HOME="$ci_home"
+
+          for profile in \
+            thinkpad-x1-carbon-gen13 \
+            hp-z2-tower-g9 \
+            apple-macbook-air-8-1
+          do
+            echo "Evaluating $profile with refreshed flake.lock..."
+            nix eval \
+              --impure \
+              --raw \
+              --no-write-lock-file \
+              "path:$PWD#homeConfigurations.\"$profile\".activationPackage.drvPath" \
+              >/dev/null
+          done
+
+      - name: Promote and commit refreshed bootstrap lock
+        shell: bash
+        run: |
+          cp flake.lock flake.lock.bootstrap
+
+          if git diff --quiet -- flake.lock.bootstrap; then
+            echo "Tracked flake.lock.bootstrap is already current."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add flake.lock.bootstrap
+          git commit -m "chore(deps): refresh release flake lock"
+          git push origin HEAD:main
