@@ -26,7 +26,7 @@ in
   # COSMIC exposes native toolkit settings for interface and monospace fonts,
   # but no separate serif-font setting. Keep SF Pro for interface text and
   # SF Mono for fixed-width text; generic serif requests resolve system-wide
-  # through NixOS Fontconfig to New York.
+  # through NixOS Fontconfig to New York at Medium weight.
   xdg.configFile."cosmic/com.system76.CosmicTk/v1/interface_font".text =
     cosmicFont "SF Pro";
 
