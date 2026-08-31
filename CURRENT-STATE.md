@@ -1,6 +1,6 @@
 # Current State
 
-Last updated: 2026-08-30
+Last updated: 2026-08-31
 
 This file is the durable operational baseline for the Home Manager repository. Read it before persistent changes and update it when profiles, shared modules, desktop behavior, Hermes integration or update responsibilities change. Do not record transient debugging experiments here.
 
@@ -53,7 +53,7 @@ Plasma-specific user behavior lives in:
 modules/desktops/plasma.nix
 ```
 
-ThinkPad and HP import the Plasma module explicitly. The MacBook profile does **not** import Plasma; its COSMIC desktop is configured system-wide in the NixOS repository. Home Manager adds shared user configuration plus the Mac-specific SSH-agent and COSMIC font choices.
+ThinkPad and HP import the Plasma module explicitly. The MacBook profile does **not** import Plasma; its COSMIC desktop is configured system-wide in the NixOS repository. Home Manager adds shared user configuration plus the Mac-specific SSH-agent and COSMIC toolkit font choices.
 
 Do not move Plasma-specific KConfig or tray handling back into `modules/common.nix`.
 
@@ -61,20 +61,22 @@ Do not move Plasma-specific KConfig or tray handling back into `modules/common.n
 
 The Apple font files are installed system-wide by the NixOS repository on all three machines. Home Manager uses those existing families rather than packaging another copy.
 
-The shared font families are:
+The shared system policy is:
 
 - `SF Pro` — sans-serif/interface
 - `SF Mono` — monospace
-- `New York` — serif
+- Apple's `New York` family at Medium weight (`wght=500`) — normal serif
 
-System Fontconfig and Gecko defaults are owned by NixOS. Shared `modules/common.nix` enables GTK font configuration with `SF Pro 10`.
+The paired NixOS configuration exposes `New York Medium` as a semantic Fontconfig alias. Normal serif requests resolve through that alias to the New York variable family at Medium weight; explicit stronger weights are not forced back to Medium. Firefox, Zen Browser and Thunderbird receive the same system-owned generic font defaults from NixOS.
+
+Home Manager must not introduce a parallel Fontconfig or Gecko font policy. Shared `modules/common.nix` only enables GTK font configuration with `SF Pro 10`.
 
 The `apple-macbook-air-8-1` profile additionally manages COSMIC's native toolkit font entries under `~/.config/cosmic/com.system76.CosmicTk/v1/`:
 
 - `interface_font` → `SF Pro`
 - `monospace_font` → `SF Mono`
 
-Both values use COSMIC's RON font structure with normal weight/stretch/style.
+COSMIC exposes no separate native serif setting. Generic serif requests therefore inherit the system-wide New York Medium mapping from NixOS Fontconfig.
 
 ## Hardware-specific user behavior
 
@@ -99,6 +101,7 @@ Both values use COSMIC's RON font structure with normal weight/stretch/style.
 - no Plasma module
 - no Hermes module
 - COSMIC interface font is SF Pro; COSMIC monospace font is SF Mono
+- generic serif requests inherit New York Medium from system Fontconfig
 - Bitwarden SSH agent socket is explicitly selected for OpenSSH and `SSH_AUTH_SOCK`
 - shared GitHub SSH routing is inherited from common configuration for authenticated development use
 
@@ -157,6 +160,8 @@ Absotui remains deliberately pinned and does not silently track upstream through
 ## Plasma defaults
 
 `modules/desktops/plasma.nix` owns shared Plasma behavior including logout/session/input/cursor/tray defaults. The HP profile disables recurring tray-login adjustment because its one-time panel bootstrap owns initial panel setup.
+
+Home Manager does not own `~/.gtkrc-2.0`; Plasma writes that GTK2 file itself. GTK3/GTK4 configuration remains managed by Home Manager.
 
 No Plasma-specific setting leaks into the MacBook profile through `modules/common.nix`.
 
@@ -258,7 +263,7 @@ The implementation and recovery procedure are documented in the paired NixOS rep
 
 The public repository pair starts at `v0.1.0`. Both repositories carry the same release tag.
 
-Public history starts from one clean initial commit rather than importing development history.
+Public history starts from one clean initial public baseline rather than importing private development history. Installed systems use the public HTTPS repositories as their regular upstreams.
 
 ## Activation/testing
 
@@ -292,6 +297,7 @@ Normal day-to-day updates are expected to flow through Topgrade.
 - Use Home Manager's local user/home data instead of fixed `/home/<name>` paths.
 - Keep secrets, deployment-specific endpoints and personal Git identity outside the repository.
 - Use `--impure` whenever evaluating these hardware profiles.
+- Use explicit `path:.#<profile>` references for manual builds/switches against an installed checkout with the ignored live lock.
 - Keep `flake.lock.bootstrap` tracked as the clean-checkout/install baseline; keep the live `flake.lock` ignored and machine-local.
 - Do not add automatic Topgrade dependency commits or pushes back to the upstream repository.
 - Keep this document synchronized with durable changes.

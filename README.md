@@ -21,9 +21,9 @@ The public history starts at `v0.1.0`. Stable releases use the same semantic-ver
 ## Profiles
 
 ```text
-.#thinkpad-x1-carbon-gen13  -> common + Plasma + Hermes
-.#hp-z2-tower-g9            -> common + Plasma without Hermes
-.#apple-macbook-air-8-1     -> common for COSMIC
+thinkpad-x1-carbon-gen13  -> common + Plasma + Hermes
+hp-z2-tower-g9            -> common + Plasma without Hermes
+apple-macbook-air-8-1     -> common for COSMIC
 ```
 
 Local user identity is derived from `USER` and `HOME`. Flake evaluation therefore intentionally uses `--impure`.
@@ -65,6 +65,12 @@ Personal Git commit identity is deliberately local. The managed Git configuratio
 Plasma-specific KConfig and tray settings live separately in `modules/desktops/plasma.nix`. ThinkPad and HP import that module explicitly. The `apple-macbook-air-8-1` profile does **not** import it; COSMIC is managed at the NixOS system level.
 
 Username and home directory are not fixed in the repository. Changing the local Unix user therefore does not require renaming a Home Manager profile.
+
+## Font ownership
+
+Apple font files, Fontconfig defaults and Gecko font defaults are owned by the paired NixOS repository. Home Manager does not duplicate that policy.
+
+The system-wide defaults are SF Pro for sans-serif, SF Mono for monospace and Apple's New York family at Medium weight (`wght=500`) for normal serif requests. COSMIC has no separate native serif setting, so generic serif requests resolve through the NixOS Fontconfig `New York Medium` semantic alias.
 
 ## ThinkPad X1 Carbon Gen 13
 
