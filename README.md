@@ -56,6 +56,16 @@ packages/
 └── node-red-file-mcp.py
 ```
 
+## Relationship to NixOS local state
+
+The paired NixOS repository owns the canonical machine-local recovery state under `/etc/nixos/local/`. Home Manager does not duplicate that state. When a user-level integration needs deployment-specific, non-secret system data, it reads the canonical NixOS file:
+
+```text
+/etc/nixos/local/deployment.json
+```
+
+The historical `/etc/nixos/deployment.json` path is accepted only as a migration/bootstrap fallback in the Hermes module. New installed-system configuration and documentation must use `/etc/nixos/local/deployment.json`.
+
 ## Shared configuration
 
 `modules/common.nix` contains desktop-neutral user configuration including Bash, Starship, nix-index, the `nixshell` wrapper, Absotui, playerctl, shared SSH/Git defaults and Zen Browser as the default browser.
@@ -87,7 +97,7 @@ The system-wide defaults are SF Pro for sans-serif, SF Mono for monospace and Ap
 
 Hermes follows the current upstream split: CLI/Desktop installation is configured through `programs.hermes-agent`, while state, settings, MCP and services remain under `services.hermes-agent`.
 
-Deployment-specific Hermes endpoints are not tracked in this repository. `modules/hermes.nix` optionally reads `/etc/nixos/deployment.json` and uses `hermes.habUrl` and `hermes.ollamaBaseUrl` when present. The module remains evaluable when that file or those keys are absent. API keys and tokens remain in the current user's `~/.config/hermes/hermes.env`.
+Deployment-specific Hermes endpoints are not tracked in this repository. `modules/hermes.nix` normally reads `/etc/nixos/local/deployment.json` and uses `hermes.habUrl` and `hermes.ollamaBaseUrl` when present. The old root-level deployment file remains only a migration/bootstrap fallback. The module remains evaluable when neither file nor those keys exist. API keys and tokens remain in the current user's `~/.config/hermes/hermes.env`.
 
 ## HP Z2 Tower G9
 
@@ -143,8 +153,12 @@ Topgrade is configured by the NixOS repository and selects the matching technica
 
 Normal clients only pull their configured repository upstream. Topgrade never commits or pushes Home Manager dependency updates back to this repository. Instead it creates a temporary candidate lock, validates the current machine's Home Manager profile against that candidate, and replaces the ignored local `flake.lock` only after successful validation.
 
-The NixOS deployment setting `topgrade.updateManagedDependencies` controls whether Topgrade advances machine-local managed dependencies. It defaults to `true`; when set to `false`, repository synchronization and normal activation continue but the local Home Manager lock is not updated.
+The NixOS setting `/etc/nixos/local/deployment.json` → `topgrade.updateManagedDependencies` controls whether Topgrade advances machine-local managed dependencies. It defaults to `true`; when set to `false`, repository synchronization and normal activation continue but the local Home Manager lock is not updated.
 
 As a result, different installed machines may intentionally run different Home Manager input revisions while sharing the same configuration source. Repository releases describe configuration/installer versions rather than every dependency refresh.
+
+## CI
+
+CI evaluates all three hardware profiles from the tracked bootstrap lock. The ThinkPad job additionally creates a documentation-only `/etc/nixos/local/deployment.json` fixture and verifies that its Hermes `habUrl` is actually consumed as `HAB_URL`. This protects the cross-repository local-state contract rather than testing only the valid no-deployment fallback.
 
 For the durable operational baseline, read [`CURRENT-STATE.md`](CURRENT-STATE.md).
