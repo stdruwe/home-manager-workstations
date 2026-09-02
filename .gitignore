@@ -4,3 +4,7 @@
 
 # Machine-local flake lock; flake.lock.bootstrap is the tracked initial state.
 /flake.lock
+
+# Optional machine-local Home Manager packages. This file is loaded by
+# modules/common.nix when present and must never be committed.
+/packages.nix
