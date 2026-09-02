@@ -1,12 +1,14 @@
 {
   lib,
   pkgs,
+  profileName,
   ...
 }:
 
 let
   kreadconfig6 = "${pkgs.kdePackages.kconfig}/bin/kreadconfig6";
   kwriteconfig6 = "${pkgs.kdePackages.kconfig}/bin/kwriteconfig6";
+  isThinkPad = profileName == "thinkpad-x1-carbon-gen13";
 
   configurePlasmaTray = pkgs.writeShellScript "configure-plasma-tray" ''
     set -u
@@ -190,6 +192,21 @@ in
       --group Mouse \
       --key cursorSize \
       36
+
+    ${lib.optionalString isThinkPad ''
+      # Route all Plasma sleep actions on the ThinkPad through systemd's
+      # suspend-then-hibernate path. With no fixed HibernateDelaySec set,
+      # systemd keeps normal suspend behavior and hibernates automatically
+      # when the battery becomes critically low.
+      for power_profile in AC Battery LowBattery; do
+        ${kwriteconfig6} \
+          --file "$HOME/.config/powerdevilrc" \
+          --group "$power_profile" \
+          --group SuspendAndShutdown \
+          --key SleepMode \
+          3
+      done
+    ''}
 
     ${configurePlasmaTray}
   '';
