@@ -8,9 +8,14 @@
 let
   userName = builtins.getEnv "USER";
   homeDirectory = builtins.getEnv "HOME";
+  localPackagesFile = "${homeDirectory}/.config/home-manager/packages.nix";
   absotui = pkgs.callPackage ../packages/absotui.nix { };
 in
 {
+  imports = lib.optional
+    (homeDirectory != "" && builtins.pathExists localPackagesFile)
+    (builtins.toPath localPackagesFile);
+
   assertions = [
     {
       assertion = userName != "";
