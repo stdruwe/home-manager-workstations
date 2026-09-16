@@ -21,7 +21,10 @@ let
         args+=("nixpkgs#$pkg")
       done
 
-      exec nix shell "''${args[@]}"
+      # nixpkgs only honors NIXPKGS_ALLOW_UNFREE during impure flake
+      # evaluation. Keep the override scoped to this wrapper process.
+      export NIXPKGS_ALLOW_UNFREE=1
+      exec nix shell --impure "''${args[@]}"
     '';
   };
 in
